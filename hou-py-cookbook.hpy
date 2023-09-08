@@ -1,0 +1,6 @@
+HOU Python Cookbook
+
+- Reload python scripts -
+	from importlib import reload
+	importlib.reload(`insert module here`)
+	
