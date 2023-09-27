@@ -1,6 +1,24 @@
-HOU Python Cookbook
-
-- Reload python scripts -
+# Reload python scripts #
 	from importlib import reload
 	importlib.reload(`insert module here`)
 	
+# Install external python modules in Houdini #
+	(cmd) curl https://bootstrap.pypa.io/get-pip.py -o `insert path here`\get-pip.py
+	(cmd) hython `insert path here`\get-pip.py
+	(cmd) hython -m pip install --upgrade pip
+	(cmd) hython -m pip install `insert module here`
+	
+# Set Node Display Flag #
+	hou.node(`insert node here`).setDisplayFlag(True)
+	
+# Get Parameters inside a folder #
+	hou.node(`insert node here`).parmsInFolder((`insert folder name here`, ))
+	
+# Access node from HDA Script #
+	node = kwargs["node"]
+		
+# Parameter Callback to custom module with node and parm #
+	__import__("`insert module here`").func(kwargs["node"], kwargs["parm"])
+	
+# Set parameter as relative reference of another parameter #
+	`insert target parameter here`.setExpression('ch("{}")'.format(`insert source parameter here`.path()))

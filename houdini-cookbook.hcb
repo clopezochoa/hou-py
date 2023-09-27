@@ -1,0 +1,12 @@
+Houdini Cookbook
+
+# Change Network editor badges visibility #
+	key d (to open the badges visibility menu)
+	
+# Network editor Hotkeys #
+	- Render node: key_T + button_Left
+	- Display node: key_R + button_Left
+	- Bypass node: key_B + button_Left
+	- Template node: key_E + button_Left
+	- Footprint node: key_W + button_Left
+	- Cut wire: key_Y + button_Left (drag)
