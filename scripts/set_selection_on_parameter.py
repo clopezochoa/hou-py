@@ -1,8 +1,8 @@
 import hou
 import time
 
-def prompt_point_select (node):
-  previous_node = node.node(node.parm("node_to_preview").eval())
+def prompt_point_select (node, target):
+  previous_node = node.node(target)
   previous_node.setDisplayFlag(True)
   previous_node.setRenderFlag(True)
   scene_view = hou.ui.paneTabOfType(hou.paneTabType.SceneViewer)
