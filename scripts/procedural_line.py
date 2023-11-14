@@ -1,30 +1,23 @@
 import hou
 
 
-def _create_xform(node, xform_number, length):
+def _set_add_node(node, segs, length):
   floats = node.parent().parmsInFolder(('Handlers', ))
-  current_node = node
-  inc = length / xform_number
+  inc = 1 / segs
 
-  for idx in range(xform_number):
-    xform = current_node.createOutputNode("xform", "xform_" + str(idx + 1))
-    xform.parm("group").set(str(idx + 1))
-    xform.parm("grouptype").set(3)
+  for idx in range(segs-1):
+    parm_name = "pt" + str(idx + 1) + "y"
+    parm = node.parm(parm_name)
+    path = floats[idx].path()
+    parm.setExpression('ch(\"../length\") * ch(\'' + path  + '\')')
+    floats[idx].set(inc*(idx+1))
+  
+  node.parm("pt" + str(segs) + "y").setExpression('ch(\"../length\")')
 
-    if idx < xform_number -1:
-      path = floats[idx].path()
-      xform.parm("ty").setExpression('ch(\'' + path  + '\')')
-      xform.parm("ty").set(inc*(idx+1))
-      
-      current_node = xform
-    else:
-      xform.parm("ty").set(length)
-      xform.createOutputNode("output", "output")
-
-def _create_float_parm(idx, length):
+def _create_float_parm(idx):
   parm = hou.FloatParmTemplate('hhandle_' + str(idx + 1), 'Handler ' + str(idx + 1), 1)
   parm.setMinValue(0.0)
-  parm.setMaxValue(length)
+  parm.setMaxValue(1.0)
   return parm
 
 def on_length_changed(node):
@@ -57,17 +50,9 @@ length = {}
 pt = geo.points()[-1]
 pt.setPosition((0,length,0))'''.format(length))
 
-def _create_resample(segs, line):
-  resample = line.createOutputNode("resample", "resample")
-  resample.parm("dolength").set(False)
-  resample.parm("dosegs").set(True)
-  resample.parm("segs").set(segs)
-  return resample
-
 def reset(node):
   floats = node.parmsInFolder(('Handlers', ))
-  length = float(node.parm('length').eval())
-  inc = length / (len(floats) +1)
+  inc = 1 / (len(floats) +1)
 
   for idx in range(len(floats)):
     parm = floats[idx]
@@ -77,20 +62,19 @@ def create_divisions(node):
   clean(node)
   segs = int(node.parm("segs").eval())
   length = float(node.parm("length").eval())
-  parm_templates = [_create_float_parm(idx, length) for idx in range(segs - 1)]
+  parm_templates = [_create_float_parm(idx) for idx in range(segs - 1)]
   folder = hou.FolderParmTemplate("hhandle", "Handlers", parm_templates = parm_templates, folder_type = hou.folderType.Simple)
   ptg = node.parmTemplateGroup()
   ptg.append(folder)
   node.setParmTemplateGroup(ptg)
 
-  line = node.createNode("line", "line")
-  line.parm("dist").set(length)
-  resample = _create_resample(segs, line)
-  set_height_to_zero = resample.createOutputNode("attribadjustfloat", "set_height_to_zero")
-  set_height_to_zero.parm('attrib').set("P")
-  set_height_to_zero.parm('operation').set(4)
+  add = node.createNode("add", "add")
+  add.parm("points").set(segs + 1)
+  add.parm("prim0").set("0-" + str(segs + 1))
+  add.cook()
+  _set_add_node(add, segs, length)
+  add.createOutputNode("output", "output")
 
-  _create_xform(set_height_to_zero, segs, length)
 
 def clean(node):
   node.deleteItems(node.children())
@@ -113,13 +97,10 @@ def clean_extrusion(node):
     node.setParmTemplateGroup(ptg)
 
 
-def dynamic_min_max(node, parm):
-  pass
-
 def preset_extrusion(node):
   clean_extrusion(node)
   prims = node.geometry().prims()
-  parm_templates = tuple([_create_float_parm(idx, 1.0) for idx in range(len(prims))])
+  parm_templates = tuple([_create_float_parm(idx) for idx in range(len(prims))])
   folder = hou.FolderParmTemplate("hhandle", "Handlers", parm_templates = parm_templates, folder_type = hou.folderType.Simple)
   ptg = node.parmTemplateGroup()
   ptg.append(folder)
@@ -182,8 +163,8 @@ def update_cross_section_parms(node):
   extrusion_folder = extrusion_node.parmTemplateGroup().findFolder('Handlers')
   extrusion_parm_templates = [_clone_parm_template(parm, extrusion_node, "_e") for parm in extrusion_folder.parmTemplates()]
   
-  new_line_folder = hou.FolderParmTemplate("l_handle_line", "Handlers Line", parm_templates = line_parm_templates, folder_type = hou.folderType.Collapsible)
-  new_extrusion_folder = hou.FolderParmTemplate("e_handle_extrusion", "Handlers Extrusion", parm_templates = extrusion_parm_templates, folder_type = hou.folderType.Collapsible)
+  new_line_folder = hou.FolderParmTemplate("l_handle_line", "Handlers Line", parm_templates = line_parm_templates, folder_type = hou.folderType.Simple)
+  new_extrusion_folder = hou.FolderParmTemplate("e_handle_extrusion", "Handlers Extrusion", parm_templates = extrusion_parm_templates, folder_type = hou.folderType.Simple)
   
   ptg.append(new_line_folder)
   ptg.append(new_extrusion_folder)
