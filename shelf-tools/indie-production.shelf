@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <toolshelf name="indie_prod" label="Indie">
+    <memberTool name="set_flipbook"/>
+    <memberTool name="opt_vdb"/>
+    <memberTool name="divide_geo"/>
+    <memberTool name="normal_geo"/>
+    <memberTool name="hide_parms"/>
+    <memberTool name="unreal_output"/>
+    <memberTool name="create_group_outputs"/>
+  </toolshelf>
+
+  <tool name="set_flipbook" label="Flipbook" icon="ROP_framecontainer">
+    <script scriptType="python"><![CDATA[# Define a callback function for creating a new custom node
+def createCustomNode(res, start, end, inputs, pane):
+
+    # Get current geo node in use
+    node = pane.currentNode().parent()
+    
+    # Create a subnet node to act as the container for the custom node
+    flipbook = node.createNode('subnet', 'flipbook_render')
+    
+    # Create inputs funnel
+    merge = flipbook.createNode('merge', 'inputs')
+    
+    # Create inputs
+    for inp in inputs:
+        print(input)
+    
+
+    
+    
+    
+    # Center Node
+    flipbook.setPosition(pane.visibleBounds().center())
+
+    # Add input ports to the custom node
+    flipbook.setGenericFlag(hou.nodeFlag.Display, True)
+
+    # Add parameters to the custom node
+    
+    
+    # Set resolution and frame range parameters
+
+#    # Add a callback function to the "RECORD" button
+#    record_button = node.parm('record')
+#    record_button.setScriptCallback(onRecordClick)
+
+# Define a callback function for the "RECORD" button
+def onRecordClick():
+    node = hou.pwd()
+    node.renderFlipbooks()
+
+# Prompt the user to select the nodes for the flipbook 
+# and input the resolution, start and end frames
+
+# Get current network editor in use
+pane = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor, 0)
+# Set the Network Editor's cursor to the selection tool
+pane.setCursorMap({
+('input', -1): 'wire',
+('output', -1): 'wire'
+})
+
+# Prompt the user to define the selection box
+pos1, pos2 = pane.selectPosition()
+
+# Get all network items inside the selection box
+items = pane.networkItemsInBox(pos1, pos2)
+
+# Filter the list to only include nodes
+selected = [item for item in items if isinstance(item, hou.Node)]
+
+# Select the nodes
+for item in selected:
+    item.setSelectState(True)
+
+
+#inputs = pane.selectNodes()
+result = hou.ui.readMultiInput("Set Flipbook Parameters", ("Resolution", "Start Frame", "End Frame"), initial_contents = ("1280x720", "1", "200"), title = "Flipbook Parameters", buttons = ("OK", "Cancel"))
+if result[0] == 0:
+        # The user clicked the "OK" button
+        resolution = tuple(int(x) for x in result[1][0].split('x'))
+        start_frame = int(result[1][1])
+        end_frame = int(result[1][2])
+
+        # Create the custom node
+        createCustomNode(resolution, start_frame, end_frame, inputs, pane)]]></script>
+  </tool>
+
+  <tool name="hide_parms" label="Hide Parameters" icon="hicon:/SVGIcons.index?SHELF_vellum_cloth.svg">
+    <script scriptType="python"><![CDATA[nodes = hou.selectedNodes()
+for node in nodes:
+    ptg = node.parmTemplateGroup()
+    for parm in ptg.parmTemplates():
+        ptg.hide(parm.name(), True)
+    node.setParmTemplateGroup(ptg)]]></script>
+  </tool>
+</shelfDocument>
